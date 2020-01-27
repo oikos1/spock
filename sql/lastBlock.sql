@@ -1,4 +1,4 @@
-SELECT n
-FROM block
-ORDER BY n DESC
+SELECT number
+FROM vulcan2x.block
+ORDER BY number DESC
 LIMIT 1

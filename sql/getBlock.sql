@@ -1,4 +1,4 @@
-SELECT n,pip,pep,per FROM block
-WHERE block.n < (${block})
-ORDER BY n DESC
+SELECT id,number,hash,timestamp FROM vulcan2x.block 
+WHERE number < (${block})
+ORDER BY number DESC
 LIMIT 1;

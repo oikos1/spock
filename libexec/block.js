@@ -1,74 +1,63 @@
 const R   = require('ramda');
 const lib = require('../lib/common');
+const poll   = require('../libexec/polling');
+const mkr   = require('../libexec/mkr');
 
-let lastPip = [0, false];
-let lastPep = [0, false];
-let lastPer = {ray:0};
 
-let pips = [];
-let peps = [];
-let pers = [];
 var isSubscribed = false;
 
 export const sync = (n) => {
    return  lib.tronWeb.trx.getBlock(n)
-  .then( block => write(n, block.block_header.raw_data.timestamp))
+  .then( block => {
+    //console.log("got block", block)
+    write(block.blockID, n, block.block_header.raw_data.timestamp, block.transactions)
+  });
+ 
  }
 
-export const subscribe = () => {
+/*export const subscribe = () => {
   if (!isSubscribed)
   _subscribe();
   return  lib.tronWeb.trx.getBlock('latest')
-  .then( block => write(block.block_header.raw_data.number, block.block_header.raw_data.timestamp))  
-}
+  .then( block => write( block.block_header.raw_data.number, block.block_header.raw_data.timestamp))  
+}*/
 
-const write =  (n, timestamp) => {
-  return read(n)
-  .then(async (val) => {
-    return {
-      n: n,
-      time: timestamp,
-      pip: (typeof val[0] != 'undefined') ? lib.u.wad(val[0][0])  : (await lastValue(n))[0].pip,  
-      pep: (typeof val[1] != 'undefined') ? lib.u.wad(val[1][0])  : (await lastValue(n))[0].pep, 
-      per: (typeof val[2] != 'undefined') ? lib.u.ray(val[2].ray) : (await lastValue(n))[0].per
-    }
+const write =  (hash, n, timestamp, txs) => {
+  return (() => Promise.all([]))()
+  .then(() => {
+    //console.log("got hash", hash)
+    let transactions = [];
+    if (typeof txs !== "undefined")
+      if (txs.length>0)
+        for (var i=0;i<txs.length;i++) {
+          let tx = {txID: txs[i].txID,
+                    data: txs[i].raw_data_hex, 
+                    //timestamp: txs[i].raw_data.timestamp,
+                    block: n};
+          transactions.push(tx);
+        }
+    return [{
+      id: n,
+      number: n,
+      hash: hash.substr(0,66),
+      timestamp: timestamp,
+    }, transactions]
   })
   .then(data => {
-    lib.db.none(lib.sql.insertBlock, data);
+    //console.log("writing data", data[0])
+    lib.db.none(lib.sql.insertBlock, data[0])
+    .then(() =>{
+      for (var i=0;i<data[1].length;i++) {
+        lib.db.none(lib.sql.insertTx,{tx: data[1][i]})
+        .catch(e => console.log(e))
+      }
+      poll.syncPoll(n); 
+      poll.syncVote(n);     
+      mkr.sync(n);
+    })
+    .catch(e => console.log(e))
   })
   .catch(e => console.log(e));
-}
-
-const read = async (n) => {
-  let pip = await lib.u.getEvents(lib.addresses.pip, "LogPeek", n); 
-  let pep = await lib.u.getEvents(lib.addresses.pep, "LogPeek", n); 
-  let per = await lib.u.getEvents(lib.addresses.per, "LogPer",  n); 
-
-  let _pip  =  new Object(pip.data[0]);
-  let _pep  =  new Object(pep.data[0]);
-  let _per  =  new Object(per.data[0]);
-
-  let promises = [];
-
-  if (typeof _pip["event_name"] != 'undefined' 
-   && typeof _pep["event_name"] != 'undefined' 
-   && typeof _per["event_name"] != 'undefined') {
-      lastPip = [lib.web3.utils.toBN(_pip["result"].val).toString(), _pip["result"].flag];
-      lastPep = [lib.web3.utils.toBN(_pep["result"].val).toString(), _pep["result"].flag];
-      lastPer = _per["result"];
-      pips.push(lastPip);
-      peps.push(lastPep);
-      pers.push(lastPer);
-      promises[0] = lastPip; 
-      promises[1] = lastPep;
-      promises[2] = lastPer;  
-  } else {
-      promises[0] = pips[pips.length-1];
-      promises[1] = peps[peps.length-1];
-      promises[2] = pers[pers.length-1];
-  }
-
-  return Promise.all(promises);
 }
 
 //-----------------------------------------------
@@ -78,10 +67,10 @@ const concurrency = 50;
 const diff = (a, b) => a - b;
 
 export const syncMissing = () => {
-    lib.latestBlock.then(function (res) {
+    lib.latestBlock.then( (res) => {
           return { from: lib.genBlock, to: res.block_header.raw_data.number }
     }).then(opts => missingBlocks(opts))
-    .then(rtn => R.sort(diff, rtn.map(R.prop('n'))))
+    .then(rtn => R.sort(diff, rtn.map(R.prop('number'))))
     .then(rtn => syncEach(rtn, syncMissing))
     .catch(function (err) {
       console.log(err)

@@ -10,7 +10,7 @@ PGPASSWORD="1likepants" pg_dump -vc \
   --no-privileges \
   -f ../sql/schema.sql \
   -h 'localhost' \
-  -d 'pg-graphql' \
+  -d 'chain' \
   -U 'postgres' \
   -p 5432
 

@@ -1,20 +1,14 @@
-INSERT INTO block (
-  n,
-  time,
-  pip,
-  pep,
-  per
+INSERT INTO vulcan2x.block (
+  id,
+  number,
+  hash,
+  timestamp
 )
 VALUES (
-  ${n},
-  to_timestamp(${time}/1000),
-  $(pip),
-  $(pep),
-  $(per)
+  ${id},  
+  ${number},
+  ${hash},  
+  to_timestamp(${timestamp}/1000)
 )
-ON CONFLICT (n)
-DO UPDATE
-SET
-pip = ${pip},
-pep = ${pep},
-per = ${per}
+ON CONFLICT (hash)
+DO NOTHING

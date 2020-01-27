@@ -32,7 +32,8 @@ const limiter = new RateLimit({
   delayMs: 100         // by 1 second
 });
 
-app.use(postgraphile(process.env.DATABASE_URL, 'public', graphqlConfig))
+app.use(postgraphile("postgresql://postgres:1likepants@localhost:5432/chain", 'polling', graphqlConfig));
+//app.use(postgraphile(process.env.DATABASE_URL, 'public', graphqlConfig))
 
-app.listen(process.env.PORT);
-console.log(`Running a GraphQL API server at localhost:${process.env.PORT}`)
+app.listen(31337);
+console.log(`Running a GraphQL API server at localhost:${31337}`)
