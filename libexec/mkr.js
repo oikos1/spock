@@ -6,7 +6,7 @@ export const sync = async (n) => {
   .then(logs => {
     //console.log("found logs", logs)
     logs.data.forEach(log => {
-      console.log("writing", log)
+      //console.log("writing", log)
       write(log) ;
     });
   }).catch(e => console.log(e));   
@@ -23,7 +23,7 @@ const write = (log) => {
     tx:           log["transaction_id"],
     block:        Number(log["block_number"])
   }
-  console.log("writing data",  { tx: data })
+  //console.log("writing data",  { tx: data })
   return lib.db.none(lib.sql.insertMkrTx, { tx: data })
   .catch(e => console.log(e));
 };

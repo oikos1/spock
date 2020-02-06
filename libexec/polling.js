@@ -6,7 +6,7 @@ export const syncPoll = async (n) => {
   .then(logs => {
     //console.log("found logs", logs)
     logs.data.forEach(log => {
-      console.log("writing", log)
+      //console.log("writing", log)
       writePoll(log) ;
     });
   }).catch(e => console.log(e));   

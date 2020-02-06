@@ -2,7 +2,7 @@ const R   = require('ramda');
 const lib = require('../lib/common');
 const poll   = require('../libexec/polling');
 const mkr   = require('../libexec/mkr');
-
+const dschief   = require('../libexec/dschief');
 
 var isSubscribed = false;
 
@@ -27,6 +27,7 @@ const write =  (hash, n, timestamp, txs) => {
   .then(() => {
     //console.log("got hash", hash)
     let transactions = [];
+    
     if (typeof txs !== "undefined")
       if (txs.length>0)
         for (var i=0;i<txs.length;i++) {
@@ -44,22 +45,37 @@ const write =  (hash, n, timestamp, txs) => {
     }, transactions]
   })
   .then(data => {
-    //console.log("writing data", data[0])
+
+    //console.log("writing data", data[0], "txs", data[1])
     lib.db.none(lib.sql.insertBlock, data[0])
     .then(() =>{
+
       for (var i=0;i<data[1].length;i++) {
+
+        //console.log("tx", data[1][i])
+        
         lib.db.none(lib.sql.insertTx,{tx: data[1][i]})
-        .catch(e => console.log(e))
+
+        .catch(e => console.log(e)).then((res) =>{
+
+            //console.log("res from inserting tx ", res)
+
+            dschief.sync(n);
+
+        })
       }
-      poll.syncPoll(n); 
-      poll.syncVote(n);     
-      mkr.sync(n);
+      syncOthers(n);
     })
     .catch(e => console.log(e))
   })
   .catch(e => console.log(e));
 }
 
+const syncOthers = (n) => {
+      poll.syncPoll(n); 
+      poll.syncVote(n);     
+      mkr.sync(n);  
+}
 //-----------------------------------------------
 // Sync All
 //-----------------------------------------------
@@ -83,8 +99,8 @@ export const lastValue = (block) => {
 }
 
 export const syncEach = (arr, f) => {
-  require('bluebird').map(arr, (n) => {
-    return sync(n);
+  require('bluebird').map(arr, (number) => {
+    return sync(number);
   }, {concurrency: concurrency})
   .then(() => {
     if(R.isEmpty(arr)) {

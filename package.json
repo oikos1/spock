@@ -35,7 +35,7 @@
     "graphql": "babel-node graphql/server.js",
     "clean": "rm -rf dist && mkdir dist",
     "build": "babel -d dist/ graphql/",
-    "serve": "node dist/server.js",
+    "serve": "babel-node dist/server.js",
     "postinstall": "npm run build"
   }
 }

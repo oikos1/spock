@@ -1,5 +1,6 @@
 require('dotenv').config()
 
+const lib 			   = require('../../lib/common');
 const express          = require('express');
 const { postgraphile } = require('postgraphile');
 const FilterPlugin     = require('postgraphile-plugin-connection-filter');
@@ -37,3 +38,4 @@ app.use(postgraphile("postgresql://postgres:1likepants@localhost:5432/chain", 'p
 
 app.listen(31337);
 console.log(`Running a GraphQL API server at localhost:${31337}`)
+
